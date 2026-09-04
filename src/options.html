@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Better GitHub</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Better GitHub</h1>
+
+      <form id="settings">
+        <label class="field">
+          <span class="label">Your GitHub username</span>
+          <input
+            id="username"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="octocat"
+          />
+          <span class="hint">
+            Draft pull requests you opened stay readable; everyone else's fade
+            out. Draft dimming is off until you fill this in.
+          </span>
+        </label>
+
+        <label class="checkbox">
+          <input id="dimDrafts" type="checkbox" />
+          <span>Dim draft pull requests in lists</span>
+        </label>
+
+        <label class="checkbox">
+          <input id="rewritePullsLinks" type="checkbox" />
+          <span>Add a default filter to bare pull request links</span>
+        </label>
+
+        <label class="field">
+          <span class="label">Default pull request filter</span>
+          <input
+            id="defaultPullsFilter"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <span class="hint">
+            Appended to links like <code>github.com/owner/repo/pulls</code>.
+          </span>
+        </label>
+
+        <div class="actions">
+          <button type="submit" class="primary">Save</button>
+          <button type="button" id="reset">Reset defaults</button>
+          <span id="status" role="status"></span>
+        </div>
+      </form>
+    </main>
+
+    <script src="settings.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

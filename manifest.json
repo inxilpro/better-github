@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Better GitHub",
+  "version": "1.0.0",
+  "description": "Dims draft pull requests in GitHub lists and adds a default filter to bare /pulls links.",
+  "permissions": ["storage"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Better GitHub",
+    "default_popup": "src/options.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["src/settings.js", "src/content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ]
+}
