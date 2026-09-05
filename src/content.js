@@ -1,11 +1,14 @@
-import { DEFAULTS, load, normalizeFilter } from './settings.js';
+import { DEFAULTS, load } from './settings.js';
 
 const STYLE_ID = 'better-github-styles';
+const ORIGINAL_HREF = 'betterGithubHref';
 const PULLS_PATH = /^\/[^/]+\/[^/]+\/pulls\/?$/;
 const GITHUB_HOSTS = new Set(['github.com', 'www.github.com']);
 
 let settings = { ...DEFAULTS };
-let refreshQueued = false;
+let seenLinks = new WeakSet();
+let pendingRoots = new Set();
+let flushQueued = false;
 
 // Escapes a value for use inside a double-quoted CSS string.
 const cssString = (value) => String(value)
@@ -19,7 +22,7 @@ function buildCss() {
 		return '';
 	}
 	
-	const mine = `.opened-by a[title*="${ cssString(username) }"]`;
+	const mine = `.opened-by a[data-hovercard-url="/users/${ cssString(username) }/hovercard"]`;
 	
 	return `
 		.js-issue-row:has(.octicon-git-pull-request-draft):has(${ mine }) {
@@ -34,13 +37,8 @@ function buildCss() {
 }
 
 function applyStyles() {
-	const root = document.head ?? document.documentElement;
 	const css = buildCss();
 	let style = document.getElementById(STYLE_ID);
-	
-	if (! root) {
-		return;
-	}
 	
 	if (! css) {
 		style?.remove();
@@ -50,50 +48,83 @@ function applyStyles() {
 	if (! style) {
 		style = document.createElement('style');
 		style.id = STYLE_ID;
-		root.append(style);
 	}
 	
 	if (style.textContent !== css) {
 		style.textContent = css;
 	}
+	
+	// Turbo navigations can swap out <head>, so re-attach if we were dropped.
+	if (! style.isConnected) {
+		(document.head ?? document.documentElement).append(style);
+	}
 }
 
-function rewriteLinks() {
-	if (! settings.rewritePullsLinks) {
+function rewriteLink(link) {
+	if (seenLinks.has(link)) {
 		return;
 	}
 	
-	const filter = normalizeFilter(settings.defaultPullsFilter);
+	seenLinks.add(link);
 	
-	if (! filter) {
+	// Most links on a page aren't PR lists, so skip URL parsing for them.
+	if (! link.getAttribute('href').includes('/pulls')) {
 		return;
 	}
 	
-	for (const link of document.querySelectorAll('a[href]:not([data-better-github])')) {
-		link.dataset.betterGithub = 'seen';
-		
-		const url = URL.parse(link.href, location.href);
-		
-		if (! url || url.search || ! GITHUB_HOSTS.has(url.host) || ! PULLS_PATH.test(url.pathname)) {
-			continue;
+	const url = URL.parse(link.href, location.href);
+	
+	if (! url || url.search || ! GITHUB_HOSTS.has(url.host) || ! PULLS_PATH.test(url.pathname)) {
+		return;
+	}
+	
+	url.searchParams.set('q', settings.defaultPullsFilter);
+	link.dataset[ORIGINAL_HREF] = link.getAttribute('href');
+	link.href = url.href;
+}
+
+function rewriteLinks(roots) {
+	if (! settings.rewritePullsLinks || ! settings.defaultPullsFilter) {
+		return;
+	}
+	
+	for (const root of roots) {
+		if (root.matches?.('a[href]')) {
+			rewriteLink(root);
 		}
 		
-		url.searchParams.set('q', filter);
-		link.href = url.href;
+		root.querySelectorAll('a[href]').forEach(rewriteLink);
 	}
 }
 
-function refresh() {
-	if (refreshQueued) {
+function restoreLinks() {
+	for (const link of document.querySelectorAll('a[data-better-github-href]')) {
+		link.setAttribute('href', link.dataset[ORIGINAL_HREF]);
+		delete link.dataset[ORIGINAL_HREF];
+	}
+	
+	seenLinks = new WeakSet();
+}
+
+function scheduleRefresh(roots) {
+	for (const root of roots) {
+		pendingRoots.add(root);
+	}
+	
+	if (flushQueued) {
 		return;
 	}
 	
-	refreshQueued = true;
+	flushQueued = true;
 	
 	requestAnimationFrame(() => {
-		refreshQueued = false;
+		const roots = pendingRoots.has(document) ? [document] : pendingRoots;
+		
+		pendingRoots = new Set();
+		flushQueued = false;
+		
 		applyStyles();
-		rewriteLinks();
+		rewriteLinks(roots);
 	});
 }
 
@@ -106,22 +137,22 @@ chrome.storage.onChanged.addListener((changes, area) => {
 		Object.entries(changes).map(([key, { newValue }]) => [key, newValue ?? DEFAULTS[key]]),
 	));
 	
-	// The filter may have changed, so every link needs another look.
-	for (const link of document.querySelectorAll('a[data-better-github]')) {
-		delete link.dataset.betterGithub;
-	}
-	
-	refresh();
+	restoreLinks();
+	scheduleRefresh([document]);
 });
 
-new MutationObserver(refresh).observe(document.documentElement, {
+new MutationObserver((records) => {
+	const added = records
+		.flatMap((record) => [...record.addedNodes])
+		.filter((node) => node.nodeType === Node.ELEMENT_NODE);
+	
+	if (added.length) {
+		scheduleRefresh(added);
+	}
+}).observe(document.documentElement, {
 	childList: true,
 	subtree: true,
 });
 
-document.addEventListener('DOMContentLoaded', refresh);
-document.addEventListener('turbo:load', refresh);
-document.addEventListener('pjax:end', refresh);
-
 settings = await load();
-refresh();
+scheduleRefresh([document]);

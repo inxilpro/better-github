@@ -1,4 +1,4 @@
-import { DEFAULTS, load, normalizeFilter, save } from './settings.js';
+import { DEFAULTS, load, save } from './settings.js';
 
 const form = document.getElementById('settings');
 const status = document.getElementById('status');
@@ -26,7 +26,7 @@ form.addEventListener('submit', async (event) => {
 		username: fields.username.value.trim().replace(/^@/, ''),
 		dimDrafts: fields.dimDrafts.checked,
 		rewritePullsLinks: fields.rewritePullsLinks.checked,
-		defaultPullsFilter: normalizeFilter(fields.defaultPullsFilter.value),
+		defaultPullsFilter: fields.defaultPullsFilter.value.trim(),
 	};
 	
 	await save(settings);

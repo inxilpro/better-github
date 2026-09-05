@@ -24,7 +24,7 @@ Draft dimming stays off until a username is set, since the styles need to know w
 
 | Setting                                         | Default                           | Notes                                                            |
 |-------------------------------------------------|-----------------------------------|------------------------------------------------------------------|
-| Your GitHub username                            | empty                             | Matched against the "opened by" link.                            |
+| Your GitHub username                            | empty                             | Matched exactly against the "opened by" link.                    |
 | Dim draft pull requests                         | on                                | Applies the styles below.                                        |
 | Add a default filter to bare pull request links | on                                | Rewrites `/owner/repo/pulls` links.                              |
 | Default pull request filter                     | `is:pr is:open sort:updated-desc` | A plain search query; a pasted `?q=…` string is decoded on save. |
@@ -36,12 +36,12 @@ Settings live in `chrome.storage.sync`, so they follow your Chrome profile.
 (Will use your username rather than `octocat`.)
 
 ```css
-.js-issue-row:has(.octicon-git-pull-request-draft):has(.opened-by a[title*="octocat"]) {
+.js-issue-row:has(.octicon-git-pull-request-draft):has(.opened-by a[data-hovercard-url="/users/octocat/hovercard"]) {
 	opacity: 0.6;
 	filter: sepia(70%) hue-rotate(240deg);
 }
 
-.js-issue-row:has(.octicon-git-pull-request-draft):not(:has(.opened-by a[title*="octocat"])) {
+.js-issue-row:has(.octicon-git-pull-request-draft):not(:has(.opened-by a[data-hovercard-url="/users/octocat/hovercard"])) {
 	opacity: 0.2;
 }
 ```
@@ -60,5 +60,5 @@ Settings live in `chrome.storage.sync`, so they follow your Chrome profile.
 ## Notes
 
 - Only one permission is requested: `storage`.
-- Link rewriting skips any link that already has a query string.
-- GitHub swaps page content without a full reload, so the content script watches the DOM and re-applies both changes after navigation.
+- Link rewriting skips any link that already has a query string. Changing the filter, or turning rewriting off, restores links that were already rewritten.
+- GitHub swaps page content without a full reload, so the content script watches for added DOM nodes and scans only those, rather than the whole page, after each change.
