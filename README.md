@@ -62,3 +62,9 @@ Settings live in `chrome.storage.sync`, so they follow your Chrome profile.
 - Only one permission is requested: `storage`.
 - Link rewriting skips any link that already has a query string. Changing the filter, or turning rewriting off, restores links that were already rewritten.
 - GitHub swaps page content without a full reload, so the content script watches for added DOM nodes and scans only those, rather than the whole page, after each change.
+
+## Publishing
+
+- `./package.sh` writes `dist/better-github-<version>.zip`, containing only the tracked files the extension needs. Upload that on the Chrome Web Store's Package tab.
+- `STORE_LISTING.md` holds the text for the store listing and privacy tab.
+- `PRIVACY.md` is the privacy policy linked from the listing.

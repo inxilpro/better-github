@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Better GitHub",
   "version": "1.0.0",
-  "description": "Improve GitHub UI",
+  "description": "Dims draft pull requests and adds a default filter to pull request list links on GitHub.",
   "permissions": [
     "storage"
   ],
@@ -49,5 +49,6 @@
       ]
     }
   ],
-  "minimum_chrome_version": "126"
+  "minimum_chrome_version": "126",
+  "homepage_url": "https://github.com/inxilpro/better-github"
 }
