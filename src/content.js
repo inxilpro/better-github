@@ -15,6 +15,25 @@ const cssString = (value) => String(value)
 	.replace(/[\\"]/g, '\\$&')
 	.replace(/[\x00-\x1f\x7f]/g, (char) => `\\${ char.charCodeAt(0).toString(16) } `);
 
+// GitHub renders PR lists with two different markups: the legacy server-rendered
+// list (.js-issue-row) and the React "repo pulls dashboard" list, which only
+// exposes hashed class names, so we anchor on data-* attributes there.
+const ROW = ':is(.js-issue-row, [class*="PullsListItem"], [data-listview-component="items-list"] > li)';
+const DRAFT = ':has(.octicon-git-pull-request-draft, [aria-label="Draft pull request"])';
+
+function mineSelector(username) {
+	const user = cssString(username);
+	
+	// The React author link only carries the login inside its filter URL (author%3Alogin),
+	// so match the three ways that query can terminate to avoid prefix matches like "login2".
+	return `:has(
+		.opened-by a[data-hovercard-url="/users/${ user }/hovercard" i],
+		a[data-testid="author-filter-link"][href$="author%3A${ user }" i],
+		a[data-testid="author-filter-link"][href*="author%3A${ user }+" i],
+		a[data-testid="author-filter-link"][href*="author%3A${ user }&" i]
+	)`;
+}
+
 function buildCss() {
 	const username = settings.username.trim();
 	
@@ -22,15 +41,15 @@ function buildCss() {
 		return '';
 	}
 	
-	const mine = `.opened-by a[data-hovercard-url="/users/${ cssString(username) }/hovercard"]`;
+	const mine = mineSelector(username);
 	
 	return `
-		.js-issue-row:has(.octicon-git-pull-request-draft):has(${ mine }) {
+		${ ROW }${ DRAFT }${ mine } > div {
 			opacity: 0.6;
 			filter: sepia(70%) hue-rotate(240deg);
 		}
 		
-		.js-issue-row:has(.octicon-git-pull-request-draft):not(:has(${ mine })) {
+		${ ROW }${ DRAFT }:not(${ mine }) > div {
 			opacity: 0.2;
 		}
 	`;

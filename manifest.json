@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Better GitHub",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Dims draft pull requests and adds a default filter to pull request list links on GitHub.",
   "permissions": [
     "storage"
